@@ -4,6 +4,8 @@ const {
   seedRestaurant,
   seedMenu,
 } = require('./seedData');
+const { Items } = require('./models/index');
+
 
 describe('Restaurant and Menu Models', () => {
   /**
@@ -92,6 +94,46 @@ describe('Restaurant and Menu Models', () => {
     });
     expect(foundMenu[0].title).toBe('title');
   }); 
+  test("restaurant can have many menus", async () => {
+    const testMenu = await Menu.create ({ title: 'test' })
+    const testRest = await Restaurant.create ({name: 'abc', location: 'bcd', cuisine: 'chinese' })
+    await testRest.addMenu(testMenu)
+    const fetchedRest = await testRest.reload()
+    const fetchedMenu = await fetchedRest.getMenus()
+    expect (fetchedMenu[0]['title']).toContain('test')
+  })
+  test("many to many between items and menus", async () => {
+    const testMenu = await Menu.create ({title: 'testMenu'})
+    const testItem = await Items.create({name: 'abc', image: 'str', price: 3, vegetarian: false});
 
+    
+  })
+  test('can find all menus and their items', async () => {
+    // Create a test menu and add some items to it
+    const testMenu = await Menu.create({ title: 'Test Menu' });
+    await testMenu.createItem({ name: 'Item 1', price: 10.99 });
+    await testMenu.createItem({ name: 'Item 2', price: 15.99 });
+    await testMenu.createItem({ name: 'Item 3', price: 20.99 });
   
+    // Find all menus and their items
+    const menus = await Menu.findAll({
+      include: [Items],
+    });
+  
+    // Check that the correct data was returned
+    expect(menus.length).toBeGreaterThan(0);
+    const testMenuResult = menus.find((menu) => menu.title === 'Test Menu');
+  expect(testMenuResult).toBeDefined();
+  if (testMenuResult) {
+    const items = testMenuResult.Items;
+    expect(items.length).toBe(3);
+    expect(items[0].name).toBe('Item 1');
+    expect(items[0].price).toBe(10.99);
+    expect(items[1].name).toBe('Item 2');
+    expect(items[1].price).toBe(15.99);
+    expect(items[2].name).toBe('Item 3');
+    expect(items[2].price).toBe(20.99);
+  }
+  });
 });
+
